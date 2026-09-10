@@ -1,16 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Search, RefreshCw, Tags } from "lucide-react";
+import { Pencil, Trash2, Search, RefreshCw, Tags } from "lucide-react";
 import categoryService from "../../services/categoryService";
+import AddCategoriesForm from "../../containers/categories/AddCategoriesForm";
+import EditCategoriesForm from "../../containers/categories/EditCategoriesForm";
+import DeleteCategoryModal from "../../containers/categories/DeleteCategoryModal";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const fetchCategories = useCallback(async () => {
+  const fetchCategories = useCallback(async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
       setError("");
 
       const res = await categoryService.getCategories();
@@ -21,7 +33,11 @@ const Categories = () => {
 
       setError(error.response?.data?.message || "Failed to fetch categories");
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -30,9 +46,37 @@ const Categories = () => {
     fetchCategories();
   }, [fetchCategories]);
 
-  const filteredCategories = categories.filter((category) =>
-    category.name?.toLowerCase().includes(search.toLowerCase()),
-  );
+  // const filteredCategories = categories.filter((category) =>
+  //   category.name?.toLowerCase().includes(search.toLowerCase()),
+  // );
+
+  const filteredCategories = categories
+    .map((category, index) => ({
+      ...category,
+      originalIndex: index,
+    }))
+    .filter((category) =>
+      category.name?.toLowerCase().includes(search.toLowerCase()),
+    );
+
+  const handleEdit = (category) => {
+    setSelectedCategory(category);
+    setIsEditModalOpen(true);
+  };
+  const handleEditClose = () => {
+    setIsEditModalOpen(false);
+    setSelectedCategory(null);
+  };
+
+  const handleDelete = (category) => {
+    setSelectedCategory(category);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteClose = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedCategory(null);
+  };
 
   return (
     <div className="space-y-5">
@@ -46,13 +90,7 @@ const Categories = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-gray-800"
-        >
-          <Plus size={16} />
-          Add Category
-        </button>
+        <AddCategoriesForm onSuccess={() => fetchCategories(true)} />
       </div>
 
       {/* Card */}
@@ -75,10 +113,11 @@ const Categories = () => {
           {/* Refresh */}
           <button
             type="button"
-            onClick={fetchCategories}
-            className="inline-flex items-center justify-center gap-2 self-start rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50"
+            onClick={() => fetchCategories(true)}
+            disabled={refreshing}
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             Refresh
           </button>
         </div>
@@ -133,7 +172,7 @@ const Categories = () => {
         {/* Table */}
         {!loading && !error && filteredCategories.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] text-left">
+            <table className="w-full min-w-150 text-left">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
                   <th className="px-4 py-3 text-[11px] font-semibold text-gray-500">
@@ -162,10 +201,10 @@ const Categories = () => {
                 {filteredCategories.map((category, index) => (
                   <tr
                     key={category._id}
-                    className="border-b border-gray-50 last:border-0 hover:bg-gray-50"
+                     className="border-b border-gray-50 last:border-0 transition-colors duration-150 hover:bg-gray-200/60"
                   >
                     <td className="px-4 py-3 text-xs text-gray-400">
-                      {index + 1}
+                      {category.originalIndex + 1}
                     </td>
 
                     <td className="px-4 py-3">
@@ -196,13 +235,27 @@ const Categories = () => {
                       </span>
                     </td>
 
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        className="text-xs font-medium text-gray-500 hover:text-gray-900"
-                      >
-                        Edit
-                      </button>
+                    {/* Actions */}
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(category)}
+                          className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                          title="Edit"
+                        >
+                          <Pencil size={15} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(category)}
+                          className="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                          title="Delete"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -211,6 +264,20 @@ const Categories = () => {
           </div>
         )}
       </div>
+
+      <EditCategoriesForm
+        category={selectedCategory}
+        isOpen={isEditModalOpen}
+        onClose={handleEditClose}
+        onSuccess={() => fetchCategories(true)}
+      />
+
+      <DeleteCategoryModal
+        category={selectedCategory}
+        isOpen={isDeleteModalOpen}
+        onClose={handleDeleteClose}
+        onSuccess={() => fetchCategories(true)}
+      />
     </div>
   );
 };
