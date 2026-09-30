@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link,  useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { useDispatch } from "react-redux";
 
@@ -18,8 +18,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -176,7 +174,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -191,7 +189,7 @@ const Login = () => {
 
           {/* Register */}
           <div className="mt-6 border-t border-gray-100 pt-5 text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-blue-600">
               Don't have an account?{" "}
               <Link
                 to="/register"
@@ -202,10 +200,6 @@ const Login = () => {
             </p>
           </div>
         </div>
-
-        <p className="mt-6 text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} DineFlow. All rights reserved.
-        </p>
       </div>
     </div>
   );

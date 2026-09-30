@@ -9,12 +9,20 @@ import {
 } from "lucide-react";
 
 import menuItemService from "../../services/menuItemService";
+import AddMenuForm from "../../containers/menu/AddMenuForm";
+import EditMenuForm from "../../containers/menu/EditMenuForm";
+import DeleteMenuForm from "../../containers/menu/DeleteMenuForm";
+import ViewMenu from "../../containers/menu/ViewMenu";
 
 const MenuItems = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   // Fetch menu items
   const fetchMenuItems = useCallback(async () => {
@@ -47,6 +55,30 @@ const MenuItems = () => {
     item.name?.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const handleEdit = () => {
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setIsEditModalOpen(false);
+  };
+
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteClose = () => {
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleView = () => {
+    setIsViewModalOpen(true);
+  };
+
+  const handleViewClose = () => {
+    setIsViewModalOpen(false);
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -59,13 +91,7 @@ const MenuItems = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-3.5 py-2 text-xs font-medium text-white transition hover:bg-gray-800"
-        >
-          <Plus size={16} />
-          Add Menu Item
-        </button>
+        <AddMenuForm />
       </div>
 
       {/* Toolbar */}
@@ -238,6 +264,9 @@ const MenuItems = () => {
                       <div className="flex justify-end gap-1">
                         <button
                           type="button"
+                          onClick={() => {
+                            handleEdit();
+                          }}
                           className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
                           title="Edit"
                         >
@@ -246,6 +275,7 @@ const MenuItems = () => {
 
                         <button
                           type="button"
+                          onClick={handleDelete}
                           className="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
                           title="Delete"
                         >
@@ -254,6 +284,7 @@ const MenuItems = () => {
 
                         <button
                           type="button"
+                          onClick={handleView}
                           className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
                           title="More"
                         >
@@ -285,6 +316,10 @@ const MenuItems = () => {
           </div>
         )}
       </div>
+
+      <EditMenuForm isOpen={isEditModalOpen} onClose={handleEditClose} />
+      <DeleteMenuForm isOpen={isDeleteModalOpen} onClose={handleDeleteClose} />
+      <ViewMenu isOpen={isViewModalOpen} onClose={handleViewClose} />
     </div>
   );
 };

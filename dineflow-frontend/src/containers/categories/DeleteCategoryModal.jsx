@@ -8,6 +8,7 @@ const DeleteCategoryModal = ({
   loading = false,
   category,
 }) => {
+  
   const handleDeleteConfirm = async () => {
     if (!category?._id) return;
 

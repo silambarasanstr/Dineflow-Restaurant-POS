@@ -1,7 +1,21 @@
 import api from "./api";
 
-const getCategories = async () => {
+const getOnlyCategories = async () => {
   const res = await api.get("/categories");
+  console.log(res.data,"Only Categories");
+  return res.data;
+
+  
+};
+
+const getCategories = async (page, limit, search = "") => {
+  const res = await api.get("/categories", {
+    params: {
+      page,
+      limit,
+      search,
+    },
+  });
   return res.data;
 };
 

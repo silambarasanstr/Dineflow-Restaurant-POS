@@ -1,68 +1,73 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pencil, Trash2, Search, RefreshCw, Tags } from "lucide-react";
+
 import categoryService from "../../services/categoryService";
 import AddCategoriesForm from "../../containers/categories/AddCategoriesForm";
 import EditCategoriesForm from "../../containers/categories/EditCategoriesForm";
 import DeleteCategoryModal from "../../containers/categories/DeleteCategoryModal";
 
+import ErrorState from "../../components/common/ErrorState";
+import EmptyState from "../../components/common/EmptyState";
+import LoadingState from "../../components/common/LoadingState";
+
 const Categories = () => {
   const [categories, setCategories] = useState([]);
+
+  const [page, setPage] = useState(1);
+  const [limit] = useState(3);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCategories, setTotalCategories] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const fetchCategories = useCallback(async (isRefresh = false) => {
-    try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+  const fetchCategories = useCallback(
+    async (isRefresh = false) => {
+      try {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+
+        setError("");
+
+        const res = await categoryService.getCategories(page, limit, search);
+
+        setCategories(res.data || []);
+        setTotalPages(res.pagination?.totalPages || 1);
+        setTotalCategories(res.pagination?.total || 0);
+      } catch (error) {
+        console.error("Category fetch error:", error);
+
+        setError(error.response?.data?.message || "Failed to fetch categories");
+      } finally {
+        if (isRefresh) {
+          setRefreshing(false);
+        } else {
+          setLoading(false);
+        }
       }
-
-      setError("");
-
-      const res = await categoryService.getCategories();
-
-      setCategories(res.data || []);
-    } catch (error) {
-      console.error("Category fetch error:", error);
-
-      setError(error.response?.data?.message || "Failed to fetch categories");
-    } finally {
-      if (isRefresh) {
-        setRefreshing(false);
-      } else {
-        setLoading(false);
-      }
-    }
-  }, []);
+    },
+    [page, limit, search],
+  );
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCategories();
   }, [fetchCategories]);
 
-  // const filteredCategories = categories.filter((category) =>
-  //   category.name?.toLowerCase().includes(search.toLowerCase()),
-  // );
-
-  const filteredCategories = categories
-    .map((category, index) => ({
-      ...category,
-      originalIndex: index,
-    }))
-    .filter((category) =>
-      category.name?.toLowerCase().includes(search.toLowerCase()),
-    );
-
   const handleEdit = (category) => {
     setSelectedCategory(category);
     setIsEditModalOpen(true);
   };
+
   const handleEditClose = () => {
     setIsEditModalOpen(false);
     setSelectedCategory(null);
@@ -77,6 +82,10 @@ const Categories = () => {
     setIsDeleteModalOpen(false);
     setSelectedCategory(null);
   };
+
+  const filteredcategories = categories.filter((category) =>
+    category.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="space-y-5">
@@ -104,7 +113,10 @@ const Categories = () => {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search categories..."
               className="w-full bg-transparent px-2 py-2 text-xs text-gray-700 outline-none placeholder:text-gray-400"
             />
@@ -122,55 +134,43 @@ const Categories = () => {
           </button>
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex min-h-60 items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-gray-900" />
+        {/* Total Categories */}
+        <div className="border-b border-gray-100 px-4 py-3">
+          <div className="w-fit rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
+            <p className="text-[11px] font-medium text-gray-500">
+              Total Categories
+            </p>
 
-              <p className="mt-3 text-xs text-gray-500">
-                Loading categories...
-              </p>
-            </div>
+            <p className="mt-0.5 text-lg font-semibold text-gray-900">
+              {totalCategories}
+            </p>
           </div>
-        )}
+        </div>
+
+        {/* Loading */}
+        {loading && <LoadingState />}
 
         {/* Error */}
         {!loading && error && (
-          <div className="flex min-h-60 items-center justify-center px-4">
-            <div className="text-center">
-              <p className="text-sm font-medium text-red-600">{error}</p>
-
-              <button
-                type="button"
-                onClick={fetchCategories}
-                className="mt-3 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
+          <ErrorState message={error} onRetry={() => fetchCategories(true)} />
         )}
 
         {/* Empty */}
-        {!loading && !error && filteredCategories.length === 0 && (
-          <div className="flex min-h-60 flex-col items-center justify-center px-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-              <Tags size={20} className="text-gray-500" />
-            </div>
-
-            <p className="mt-3 text-sm font-medium text-gray-700">
-              No categories found
-            </p>
-
-            <p className="mt-1 text-xs text-gray-400">
-              Try a different search term.
-            </p>
-          </div>
+        {!loading && !error && categories.length === 0 && (
+          <EmptyState
+            title={
+              search.trim() ? "No categories found" : "No categories available"
+            }
+            message={
+              search.trim()
+                ? "Try a different search term."
+                : "Add a category to get started."
+            }
+          />
         )}
 
         {/* Table */}
-        {!loading && !error && filteredCategories.length > 0 && (
+        {!loading && !error && categories.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full min-w-150 text-left">
               <thead>
@@ -198,15 +198,17 @@ const Categories = () => {
               </thead>
 
               <tbody>
-                {filteredCategories.map((category, index) => (
+                {categories.map((category, index) => (
                   <tr
                     key={category._id}
-                     className="border-b border-gray-50 last:border-0 transition-colors duration-150 hover:bg-gray-200/60"
+                    className="border-b border-gray-50 last:border-0 transition-colors duration-150 hover:bg-gray-200/60"
                   >
+                    {/* Index */}
                     <td className="px-4 py-3 text-xs text-gray-400">
-                      {category.originalIndex + 1}
+                      {(page - 1) * limit + index + 1}
                     </td>
 
+                    {/* Category */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100">
@@ -219,10 +221,12 @@ const Categories = () => {
                       </div>
                     </td>
 
+                    {/* Description */}
                     <td className="px-4 py-3 text-xs text-gray-500">
                       {category.description || "-"}
                     </td>
 
+                    {/* Status */}
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full px-2 py-1 text-[10px] font-medium ${
@@ -238,6 +242,7 @@ const Categories = () => {
                     {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1">
+                        {/* Edit */}
                         <button
                           type="button"
                           onClick={() => handleEdit(category)}
@@ -247,6 +252,7 @@ const Categories = () => {
                           <Pencil size={15} />
                         </button>
 
+                        {/* Delete */}
                         <button
                           type="button"
                           onClick={() => handleDelete(category)}
@@ -263,8 +269,53 @@ const Categories = () => {
             </table>
           </div>
         )}
+
+        {/* Pagination */}
+        {!loading && !error && categories.length > 0 && (
+          <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
+            {/* Previous */}
+            <button
+              type="button"
+              onClick={() => setPage((prev) => prev - 1)}
+              disabled={page === 1}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            {/* Page */}
+            <span className="text-xs text-gray-500">
+              Page {page} of {totalPages}
+            </span>
+
+            {/* Next */}
+            <button
+              type="button"
+              onClick={() => setPage((prev) => prev + 1)}
+              disabled={page === totalPages}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
+
+        <div className="border-t border-gray-100 px-4 py-2.5">
+          <p className="text-[11px] text-gray-400">
+            Showing{" "}
+            <span className="font-medium text-gray-600">
+              {filteredcategories.length}
+            </span>{" "}
+            of{" "}
+            <span className="font-medium text-gray-600">
+              {categories.length}
+            </span>{" "}
+            categories
+          </p>
+        </div>
       </div>
 
+      {/* Edit Modal */}
       <EditCategoriesForm
         category={selectedCategory}
         isOpen={isEditModalOpen}
@@ -272,6 +323,7 @@ const Categories = () => {
         onSuccess={() => fetchCategories(true)}
       />
 
+      {/* Delete Modal */}
       <DeleteCategoryModal
         category={selectedCategory}
         isOpen={isDeleteModalOpen}
