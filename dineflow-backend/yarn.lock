@@ -632,6 +632,11 @@ once@^1.4.0:
   dependencies:
     wrappy "1"
 
+openai@^7.23.0:
+  version "7.23.0"
+  resolved "https://registry.yarnpkg.com/openai/-/openai-7.23.0.tgz#fcecfda17aff300228304096bc073838220096f9"
+  integrity sha512-0ecOXnFSMNWZq6cUBcTV6Lf93y+fm8BH/+QzFvpoP1UGNOE5pnytRa6HAPGCw+3IS9SIAW7rc1M8yyzN1PiBAQ==
+
 parseurl@^1.3.3:
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/parseurl/-/parseurl-1.3.3.tgz#9da19e7bee8d12dff0513ed5b76957793bc2e8d4"

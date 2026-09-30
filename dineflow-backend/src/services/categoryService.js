@@ -15,12 +15,34 @@ export const createCategory = async ({ name, description }) => {
   return category;
 };
 
-export const getCategories = async () => {
-  const categories = await Category.find().sort({
-    createdAt: -1,
-  });
+export const getCategories = async (page = 1, limit = 10, search = "",) => {
+  const skip = (page - 1) * limit;
 
-  return categories;
+  const filter = search
+    ? {
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
+        ],
+      }
+    : {};
+
+  const categories = await Category.find(filter)
+    .sort({
+      createdAt: -1,
+    })
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Category.countDocuments(filter);
+
+  return {
+    categories,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 };
 
 export const getCategoryById = async (id) => {
@@ -33,10 +55,7 @@ export const getCategoryById = async (id) => {
   return category;
 };
 
-export const updateCategory = async (
-  id,
-  { name, description, isActive }
-) => {
+export const updateCategory = async (id, { name, description, isActive }) => {
   const category = await Category.findById(id);
 
   if (!category) {

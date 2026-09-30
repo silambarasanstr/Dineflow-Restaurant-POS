@@ -11,6 +11,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import billRoutes from "./routes/billRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 const app = express();
 
@@ -19,7 +20,7 @@ const app = express();
 app.use(
   cors({
     origin: "http://localhost:9001",
-  })
+  }),
 );
 
 app.use(express.json());
@@ -46,6 +47,7 @@ app.use("/api/dashboard", dashboardRoutes);
 
 app.use("/api/reports", reportRoutes);
 
+app.use("/api/ai", aiRoutes);
 // Test route
 
 app.get("/", (req, res) => {
